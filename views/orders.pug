@@ -1,0 +1,51 @@
+doctype html
+html(lang="en")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport", content="width=device-width, initial-scale=1.0")
+    title Ordini Ricevuti
+    style.
+      body { font-family: Arial, sans-serif; }
+      table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+      th, td { border: 1px solid #ddd; padding: 8px; }
+      th { background-color: #f4f4f4; }
+  body
+    h1 Ordini Ricevuti
+    table
+      thead
+        tr
+          th ID
+          th Articolo
+          th Quantità
+          th Tavolo
+          th Tempo
+      tbody#ordersTable
+        // Gli ordini verranno inseriti qui
+    script.
+      async function fetchOrders() {
+        try {
+          const response = await fetch('/orders');
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          const orders = await response.json();
+          const tableBody = document.getElementById('ordersTable');
+          tableBody.innerHTML = '';
+          orders.forEach(order => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${order.id}</td>
+              <td>${order.item}</td>
+              <td>${order.quantity}</td>
+              <td>${order.table}</td>
+              <td>${new Date(order.time).toLocaleString()}</td>
+            `;
+            tableBody.appendChild(row);
+          });
+        } catch (error) {
+          console.error('Errore nel recupero degli ordini:', error);
+          document.getElementById('ordersTable').innerHTML = '<tr><td colspan="5">Errore nel recupero degli ordini.</td></tr>';
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', fetchOrders);

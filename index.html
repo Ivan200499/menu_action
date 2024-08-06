@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu del Ristorante</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f8f9fa; color: #333; }
+        .container { width: 80%; margin: 0 auto; padding-top: 20px; }
+        h1, h2 { color: #333; }
+        .menu-section { margin-bottom: 40px; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background-color: #343a40; color: #fff; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+        .order-form { margin-top: 20px; padding: 10px; border: 1px solid #ddd; background-color: #fff; }
+        .order-form label { display: block; margin-bottom: 5px; }
+        .order-form input, .order-form select { width: 100%; padding: 8px; margin-bottom: 10px; }
+        .order-form button { background-color: #28a745; color: #fff; border: none; padding: 10px; cursor: pointer; }
+        .order-form button:hover { background-color: #218838; }
+        .order-message.success { color: #28a745; }
+        .order-message.error { color: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Menu del Ristorante</h1>
+        
+        <div class="menu-section" id="drinksSection">
+            <h2>Bevande</h2>
+            <table id="drinksTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nome</th>
+                        <th>Prezzo</th>
+                        <th>Opzioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Gli articoli delle bevande verranno inseriti qui -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="menu-section" id="foodSection">
+            <h2>Cibo</h2>
+            <table id="foodTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nome</th>
+                        <th>Prezzo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Gli articoli del cibo verranno inseriti qui -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="order-form">
+            <h2>Effettua un Ordine</h2>
+            <form id="orderForm">
+                <label for="item">ID Articolo:</label>
+                <input type="number" id="item" name="item" required>
+                <label for="quantity">Quantità:</label>
+                <input type="number" id="quantity" name="quantity" min="1" value="1" required>
+                <div id="optionsContainer" style="display: none;">
+                    <label for="options">Opzioni:</label>
+                    <select id="options" name="options"></select>
+                </div>
+                <button type="submit">Invia Ordine</button>
+            </form>
+            <div id="orderMessage" class="order-message"></div>
+        </div>
+    </div>
+    
+    <script>
+        async function fetchMenu() {
+            try {
+                const response = await fetch('http://localhost:3000/menu');
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const menu = await response.json();
+                
+                const drinksTableBody = document.querySelector('#drinksTable tbody');
+                const foodTableBody = document.querySelector('#foodTable tbody');
+                drinksTableBody.innerHTML = '';
+                foodTableBody.innerHTML = '';
+                
+                menu.forEach(item => {
+                    const row = document.createElement('tr');
+                    if (item.category === 'Bevande') {
+                        row.innerHTML = `
+                            <td>${item.id}</td>
+                            <td>${item.name}</td>
+                            <td>${item.price.toFixed(2)} €</td>
+                            <td>${item.options ? `<select>${item.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}</select>` : ''}</td>
+                        `;
+                        drinksTableBody.appendChild(row);
+                    } else if (item.category === 'Cibo') {
+                        row.innerHTML = `
+                            <td>${item.id}</td>
+                            <td>${item.name}</td>
+                            <td>${item.price.toFixed(2)} €</td>
+                            <td></td>
+                        `;
+                        foodTableBody.appendChild(row);
+                    }
+                });
+            } catch (error) {
+                console.error('Errore nel recupero del menu:', error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', fetchMenu);
+
+        document.getElementById('orderForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const itemId = parseInt(document.getElementById('item').value);
+            const quantity = parseInt(document.getElementById('quantity').value);
+            const optionsSelect = document.getElementById('options');
+            const options = optionsSelect.options[optionsSelect.selectedIndex]?.value || null;
+            const messageDiv = document.getElementById('orderMessage');
+
+            if (isNaN(itemId) || isNaN(quantity) || quantity <= 0) {
+                messageDiv.textContent = 'Inserisci un ID articolo valido e una quantità positiva.';
+                messageDiv.className = 'order-message error';
+                return;
+            }
+
+            try {
+                const response = await fetch('/orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: Date.now(),
+                        item: itemId,
+                        quantity: quantity,
+                        option: options,
+                        time: new Date().toISOString()
+                    })
+                });
+
+                if (response.ok) {
+                    messageDiv.textContent = 'Ordine inviato con successo!';
+                    messageDiv.className = 'order-message success';
+                    document.getElementById('orderForm').reset();
+                    document.getElementById('optionsContainer').style.display = 'none';
+                } else {
+                    messageDiv.textContent = 'Errore nell\'invio dell\'ordine.';
+                    messageDiv.className = 'order-message error';
+                }
+            } catch (error) {
+                console.error('Errore nell\'invio dell\'ordine:', error);
+            }
+        });
+
+        document.getElementById('item').addEventListener('change', async (e) => {
+            const itemId = parseInt(e.target.value);
+            if (!isNaN(itemId)) {
+                try {
+                    const response = await fetch('http://localhost:3000/menu');
+                    const menu = await response.json();
+                    const item = menu.find(i => i.id === itemId);
+
+                    if (item && item.options) {
+                        const optionsContainer = document.getElementById('optionsContainer');
+                        const optionsSelect = document.getElementById('options');
+                        optionsSelect.innerHTML = '';
+                        item.options.forEach(option => {
+                            const optionElement = document.createElement('option');
+                            optionElement.value = option;
+                            optionElement.textContent = option;
+                            optionsSelect.appendChild(optionElement);
+                        });
+                        optionsContainer.style.display = 'block';
+                    } else {
+                        document.getElementById('optionsContainer').style.display = 'none';
+                    }
+                } catch (error) {
+                    console.error('Errore nel recupero delle opzioni:', error);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

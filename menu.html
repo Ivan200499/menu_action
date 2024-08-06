@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu del Ristorante</title>
+    <style>
+        body { 
+            font-family: 'Arial', sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background-color: #f4f4f4; 
+            color: #333;
+        }
+        .container { 
+            width: 80%; 
+            margin: 0 auto; 
+            padding: 20px;
+        }
+        h1 { 
+            text-align: center; 
+            color: #000; 
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+        .menu-section { 
+            margin-top: 20px; 
+            padding: 20px; 
+            background-color: #fff; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h2 { 
+            margin-bottom: 10px; 
+            font-size: 1.8rem; 
+            color: #000;
+            border-bottom: 2px solid #ffcc00;
+            padding-bottom: 10px;
+        }
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin: 10px 0; 
+        }
+        th, td { 
+            border: 1px solid #ddd; 
+            padding: 12px; 
+            text-align: left;
+        }
+        th { 
+            background-color: #000; 
+            color: #ffcc00;
+        }
+        tr:nth-child(even) { 
+            background-color: #fafafa; 
+        }
+        .order-form { 
+            margin-top: 20px; 
+            padding: 20px; 
+            background-color: #fff; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .order-form h2 { 
+            font-size: 1.8rem; 
+            color: #000;
+            border-bottom: 2px solid #ffcc00;
+            padding-bottom: 10px;
+        }
+        .order-form label { 
+            display: block; 
+            margin-bottom: 8px; 
+            font-size: 1rem; 
+            color: #333;
+        }
+        .order-form input, .order-form select { 
+            width: 100%; 
+            padding: 10px; 
+            margin-bottom: 15px; 
+            border: 1px solid #ddd; 
+            border-radius: 4px; 
+            font-size: 1rem;
+        }
+        .order-form select { 
+            height: auto; 
+        }
+        .order-form button { 
+            background-color: #ffcc00; 
+            color: #000; 
+            border: none; 
+            padding: 12px 20px; 
+            border-radius: 4px; 
+            font-size: 1rem; 
+            cursor: pointer; 
+            transition: background-color 0.3s ease;
+        }
+        .order-form button:hover { 
+            background-color: #e6b800;
+        }
+        .order-form #orderMessage { 
+            margin-top: 10px; 
+            font-size: 1rem; 
+            color: #e74c3c; /* Default error color */
+        }
+        .order-form #orderMessage.success { 
+            color: #28a745; /* Success color (green) */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Menu del Ristorante</h1>
+        
+        <div class="menu-section" id="drinksSection">
+            <h2>Bevande</h2>
+            <table id="drinksTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nome</th>
+                        <th>Prezzo</th>
+                        <th>Opzioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Gli articoli delle bevande verranno inseriti qui -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="menu-section" id="foodSection">
+            <h2>Cibo</h2>
+            <table id="foodTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nome</th>
+                        <th>Prezzo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Gli articoli del cibo verranno inseriti qui -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="order-form">
+            <h2>Effettua un Ordine</h2>
+            <form id="orderForm">
+                <label for="item">ID Articolo:</label>
+                <input type="number" id="item" name="item" required>
+                <label for="quantity">Quantità:</label>
+                <input type="number" id="quantity" name="quantity" min="1" value="1" required>
+                <div id="optionsContainer" style="display: none;">
+                    <label for="options">Opzioni:</label>
+                    <select id="options" name="options" multiple></select>
+                </div>
+                <button type="submit">Invia Ordine</button>
+            </form>
+            <div id="orderMessage"></div>
+        </div>
+    </div>
+    
+    <script>
+        async function fetchMenu() {
+            try {
+                const response = await fetch('/menu');
+                const menu = await response.json();
+                
+                const drinksTableBody = document.querySelector('#drinksTable tbody');
+                const foodTableBody = document.querySelector('#foodTable tbody');
+                drinksTableBody.innerHTML = '';
+                foodTableBody.innerHTML = '';
+                
+                menu.forEach(item => {
+                    const row = document.createElement('tr');
+                    if (item.category === 'Bevande') {
+                        row.innerHTML = `
+                            <td>${item.id}</td>
+                            <td>${item.name}</td>
+                            <td>${item.price.toFixed(2)} €</td>
+                            <td>${item.options ? `<select data-id="${item.id}" multiple>${item.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}</select>` : ''}</td>
+                        `;
+                        drinksTableBody.appendChild(row);
+                    } else if (item.category === 'Cibo') {
+                        row.innerHTML = `
+                            <td>${item.id}</td>
+                            <td>${item.name}</td>
+                            <td>${item.price.toFixed(2)} €</td>
+                            <td></td>
+                        `;
+                        foodTableBody.appendChild(row);
+                    }
+                });
+            } catch (error) {
+                console.error('Errore nel recupero del menu:', error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', fetchMenu);
+
+        document.getElementById('orderForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const itemId = parseInt(document.getElementById('item').value);
+            const quantity = parseInt(document.getElementById('quantity').value);
+            const optionsSelect = document.getElementById('options');
+            const options = Array.from(optionsSelect.selectedOptions).map(option => option.value);
+            const messageDiv = document.getElementById('orderMessage');
+
+            if (isNaN(itemId) || isNaN(quantity) || quantity <= 0) {
+                messageDiv.textContent = 'Inserisci un ID articolo valido e una quantità positiva.';
+                messageDiv.className = ''; // Remove success class
+                messageDiv.style.color = '#e74c3c'; // Red for error
+                return;
+            }
+
+            try {
+                const response = await fetch('/orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: Date.now(),
+                        item: itemId,
+                        quantity: quantity,
+                        options: options,
+                        time: new Date().toISOString()
+                    })
+                });
+
+                if (response.ok) {
+                    messageDiv.textContent = 'Ordine inviato con successo!';
+                    messageDiv.className = 'success'; // Apply success class
+                    document.getElementById('orderForm').reset();
+                    document.getElementById('optionsContainer').style.display = 'none';
+                } else {
+                    messageDiv.textContent = 'Errore nell\'invio dell\'ordine.';
+                    messageDiv.className = ''; // Remove success class
+                    messageDiv.style.color = '#e74c3c'; // Red for error
+                }
+            } catch (error) {
+                console.error('Errore nell\'invio dell\'ordine:', error);
+                messageDiv.textContent = 'Errore nell\'invio dell\'ordine.';
+                messageDiv.className = ''; // Remove success class
+                messageDiv.style.color = '#e74c3c'; // Red for error
+            }
+        });
+
+        document.getElementById('item').addEventListener('change', async (e) => {
+            const itemId = parseInt(e.target.value);
+            if (!isNaN(itemId)) {
+                try {
+                    const response = await fetch('/menu');
+                    const menu = await response.json();
+                    const item = menu.find(i => i.id === itemId);
+
+                    if (item && item.options) {
+                        const optionsContainer = document.getElementById('optionsContainer');
+                        const optionsSelect = document.getElementById('options');
+                        optionsSelect.innerHTML = '';
+                        item.options.forEach(option => {
+                            const optionElement = document.createElement('option');
+                            optionElement.value = option;
+                            optionElement.textContent = option;
+                            optionsSelect.appendChild(optionElement);
+                        });
+                        optionsContainer.style.display = 'block';
+                    } else {
+                        document.getElementById('optionsContainer').style.display = 'none';
+                    }
+                } catch (error) {
+                    console.error('Errore nel recupero delle opzioni:', error);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
